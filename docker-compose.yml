@@ -1,0 +1,68 @@
+# version: "3.8"
+
+# services:
+#   db:
+#     image: postgres
+#     container_name: app
+#     restart: always
+#     environment:
+#       POSTGRES_USER: postgres
+#       POSTGRES_PASSWORD: Hariom
+#       POSTGRES_DB: postgres
+#     ports:
+#       - "5432:5432"
+#     healthcheck:
+#       test: ["CMD", "pg_isready", "-U", "postgres"]
+#       interval: 5s
+#       retries: 5
+
+#   app:
+#     build: .
+#     dns:
+#       - 8.8.8.8
+#       - 8.8.4.4
+#     depends_on:
+#       db:
+#         condition: service_healthy
+#     environment:
+#       DATABASE_URL: postgresql://postgres:Hariom@db:5432/postgres
+#     working_dir: /app  
+#     command: ["python", "app/main.py"]
+
+
+version: "3.8"
+
+services:
+  bit:
+    image: bitnami/postgresql
+    container_name: bit
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Hariom
+      POSTGRES_DB: bitdb
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: alembic_app
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    depends_on:
+      bit:
+        condition: service_healthy
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=postgresql://postgres:Hariom@bit:5432/bitdb
+    working_dir: /app
+    volumes:
+      - .:/app  # Mounts your project into the container
+    command: ["sh", "-c", "alembic upgrade head && python main.py"]
+    ports:
+      - "5000:5000"
